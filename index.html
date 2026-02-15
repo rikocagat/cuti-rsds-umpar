@@ -11,23 +11,24 @@
 
 <style>
 body{
-  background:radial-gradient(circle at top,#e0f2fe,#f8fafc);
+  background:linear-gradient(180deg,#e0f2fe,#f8fafc);
 }
 .card{
-  background:#fff;
+  background:#ffffff;
   border-radius:28px;
-  box-shadow:0 30px 60px rgba(15,23,42,.15);
+  box-shadow:0 30px 60px rgba(15,23,42,.12);
 }
 .input{
   width:100%;
   padding:14px 16px;
   border-radius:16px;
   border:1px solid #cbd5e1;
+  font-size:15px;
 }
 .input:focus{
   outline:none;
-  border-color:#38bdf8;
-  box-shadow:0 0 0 4px rgba(56,189,248,.25);
+  border-color:#0ea5e9;
+  box-shadow:0 0 0 4px rgba(14,165,233,.25);
 }
 .ac{
   position:absolute;
@@ -38,6 +39,7 @@ body{
   max-height:260px;
   overflow:auto;
   width:100%;
+  box-shadow:0 18px 40px rgba(0,0,0,.15);
 }
 .ac-item{
   padding:14px 18px;
@@ -53,35 +55,46 @@ body{
   padding:16px;
 }
 canvas{touch-action:none}
+.divider{
+  height:1px;
+  background:linear-gradient(to right,transparent,#cbd5e1,transparent);
+  margin:24px 0;
+}
 </style>
 </head>
 
 <body class="min-h-screen flex justify-center p-6">
 <main class="card w-full max-w-2xl p-8">
 
-<h1 class="text-3xl font-bold text-sky-700">Pengajuan Cuti</h1>
-<p class="text-sm text-slate-500 mb-8">RSUD dr. Soedarso</p>
+<header class="mb-8">
+  <h1 class="text-3xl font-bold text-sky-700">Pengajuan Cuti</h1>
+  <p class="text-sm text-slate-500">RSUD dr. Soedarso</p>
+</header>
 
 <section class="space-y-4">
 
+<!-- NAMA -->
 <div>
   <label class="font-semibold text-sm">Nama Pegawai</label>
   <div class="relative">
-    <input id="nama" class="input" autocomplete="off" placeholder="Ketik minimal 2 huruf">
+    <input id="nama" class="input" placeholder="Ketik minimal 2 huruf" autocomplete="off">
     <div id="acBox" class="ac hidden"></div>
   </div>
 </div>
 
+<!-- NIP -->
 <div>
   <label class="font-semibold text-sm">NIP</label>
   <input id="nip" class="input bg-slate-100" readonly>
 </div>
 
+<!-- HP -->
 <div>
   <label class="font-semibold text-sm">No HP</label>
   <input id="hp" class="input">
 </div>
 
+<!-- JENIS -->
 <div>
   <label class="font-semibold text-sm">Jenis Cuti</label>
   <select id="jenis" class="input">
@@ -95,46 +108,59 @@ canvas{touch-action:none}
   </select>
 </div>
 
+<!-- TANGGAL -->
 <div class="grid grid-cols-2 gap-4">
   <input id="tgl" type="date" class="input">
   <input id="lama" type="number" class="input" placeholder="Lama (hari)">
 </div>
 
+<!-- ALAMAT -->
 <textarea id="alamat" class="input h-24" placeholder="Alamat selama cuti"></textarea>
 
+<!-- SYARAT -->
 <div id="reqBox" class="hidden req-card"></div>
 
+<div class="divider"></div>
+
+<!-- FILE -->
 <div>
-  <label class="font-semibold text-sm">Upload 2 File PDF</label>
+  <label class="font-semibold text-sm">
+    Upload 2 File PDF <span class="text-xs text-slate-500">(maks 100 KB / file)</span>
+  </label>
   <input id="pdf1" type="file" accept="application/pdf" class="mt-2">
   <input id="pdf2" type="file" accept="application/pdf" class="mt-2">
 </div>
 
-<button onclick="showTTD()" class="mt-6 w-full py-4 bg-sky-600 text-white rounded-xl font-bold">
-  Lanjut Tanda Tangan
+<button onclick="showTTD()" class="mt-6 w-full py-4 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold transition">
+  Lanjut ke Tanda Tangan
 </button>
 
 </section>
 
+<!-- TTD -->
 <section id="ttdSection" class="hidden mt-8">
-  <canvas id="pad" class="w-full h-48 bg-white border rounded-xl"></canvas>
+  <h2 class="font-bold text-lg mb-2">Tanda Tangan Digital</h2>
+  <div class="border-2 border-dashed border-sky-300 rounded-2xl p-3 bg-sky-50">
+    <canvas id="pad" class="w-full h-48 bg-white rounded-xl"></canvas>
+  </div>
   <div class="flex justify-between mt-3">
-    <button onclick="clearPad()" class="text-red-500">Hapus</button>
-    <button onclick="submitForm()" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold">
+    <button onclick="clearPad()" class="text-red-500 font-semibold">Hapus</button>
+    <button onclick="submitForm()" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
       Kirim Pengajuan
     </button>
   </div>
 </section>
 
-<div id="done" class="hidden text-center mt-10">
+<!-- DONE -->
+<div id="done" class="hidden text-center py-10">
   <h2 class="text-xl font-bold text-emerald-600">Berhasil</h2>
-  <p>Pengajuan cuti terkirim</p>
+  <p class="text-slate-500">Pengajuan cuti telah dikirim</p>
 </div>
 
 </main>
 
 <script>
-/* ================= CONFIG ================= */
+/* CONFIG */
 const sb = supabase.createClient(
   'https://ufiqibxdgwlysqhinqbz.supabase.co',
   'sb_publishable_EVSVWnsUriOPA_O3RnGTpg_Zmd4pyAL'
@@ -149,7 +175,7 @@ const requirements = {
   LUAR_NEGARA:['Surat permohonan TTD PPK','Formulir permohonan cuti']
 };
 
-/* ================= AUTOCOMPLETE ================= */
+/* AUTOCOMPLETE */
 const nama=document.getElementById('nama');
 const nip=document.getElementById('nip');
 const acBox=document.getElementById('acBox');
@@ -162,8 +188,7 @@ nama.addEventListener('input',()=>{
   if(q.length<2){acBox.classList.add('hidden');return}
 
   timer=setTimeout(async()=>{
-    const {data,error}=await sb
-      .from('pegawai')
+    const {data,error}=await sb.from('pegawai')
       .select('nama,nip_nik')
       .ilike('nama',q+'%')
       .limit(10);
@@ -188,10 +213,9 @@ nama.addEventListener('input',()=>{
   },300);
 });
 
-/* ================= SYARAT CUTI ================= */
+/* SYARAT */
 const jenis=document.getElementById('jenis');
 const reqBox=document.getElementById('reqBox');
-
 jenis.addEventListener('change',()=>{
   const r=requirements[jenis.value];
   if(!r){reqBox.classList.add('hidden');return}
@@ -199,7 +223,7 @@ jenis.addEventListener('change',()=>{
   reqBox.classList.remove('hidden');
 });
 
-/* ================= TTD ================= */
+/* TTD */
 let pad;
 function showTTD(){
   document.getElementById('ttdSection').classList.remove('hidden');
@@ -207,7 +231,7 @@ function showTTD(){
 }
 function clearPad(){pad.clear()}
 
-/* ================= SUBMIT ================= */
+/* SUBMIT */
 async function submitForm(){
 try{
   if(pad.isEmpty()) return alert('Tanda tangan wajib');
@@ -215,6 +239,9 @@ try{
   const f1=document.getElementById('pdf1').files[0];
   const f2=document.getElementById('pdf2').files[0];
   if(!f1||!f2) return alert('Dua file PDF wajib');
+
+  if(f1.size>102400||f2.size>102400)
+    return alert('Ukuran PDF maksimal 100 KB');
 
   const uid=crypto.randomUUID();
 
@@ -243,6 +270,13 @@ try{
   });
 
   if(ins.error) throw ins.error;
+
+  /* RESET FRONTEND */
+  document.querySelectorAll('input,textarea,select').forEach(e=>e.value='');
+  acBox.innerHTML=''; acBox.classList.add('hidden');
+  reqBox.classList.add('hidden');
+  pad.clear();
+  document.getElementById('ttdSection').classList.add('hidden');
 
   document.getElementById('done').classList.remove('hidden');
 
