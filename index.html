@@ -8,11 +8,8 @@
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Supabase JS v2 (WAJIB) -->
+<!-- Supabase JS v2 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- Signature Pad -->
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <style>
   body{background:#f1f5f9}
@@ -35,8 +32,7 @@
 <h1 class="text-xl font-bold mb-1">Pengajuan Cuti</h1>
 <p class="text-sm text-slate-500 mb-4">RSUD dr. Soedarso</p>
 
-<!-- STEP 1 -->
-<section id="step1">
+<section>
   <div class="relative mb-3">
     <input id="nama" class="input" placeholder="Nama (ketik min 2 huruf)" autocomplete="off">
     <div id="acBox" class="ac hidden"></div>
@@ -59,75 +55,36 @@
   <input id="lama" type="number" class="input mb-2" placeholder="Lama (hari)">
   <textarea id="alamat" class="input mb-4" placeholder="Alamat selama cuti"></textarea>
 
-  <button class="btn bg-sky-500 text-white" onclick="go(2)">Next</button>
+  <button class="btn bg-emerald-500 text-white" onclick="alert('Form OK')">
+    Submit (dummy)
+  </button>
 </section>
-
-<!-- STEP 2 -->
-<section id="step2" class="hidden">
-  <p class="text-sm mb-2 font-semibold">Upload 2 File PDF</p>
-  <input id="pdf1" type="file" accept="application/pdf" class="mb-2">
-  <input id="pdf2" type="file" accept="application/pdf" class="mb-4">
-
-  <div class="flex gap-2">
-    <button class="btn bg-slate-200" onclick="go(1)">Kembali</button>
-    <button class="btn bg-sky-500 text-white" onclick="go(3)">Next</button>
-  </div>
-</section>
-
-<!-- STEP 3 -->
-<section id="step3" class="hidden">
-  <p class="text-sm mb-2 font-semibold">Tanda Tangan</p>
-  <canvas id="pad" class="border rounded-xl w-full h-28 bg-white"></canvas>
-  <button class="text-sm text-red-500 mt-1" onclick="pad.clear()">Hapus TTD</button>
-
-  <div class="flex gap-2 mt-4">
-    <button class="btn bg-slate-200" onclick="go(2)">Kembali</button>
-    <button class="btn bg-emerald-500 text-white" onclick="submitForm()">Ajukan</button>
-  </div>
-</section>
-
-<div id="done" class="hidden text-center p-6">
-  <h2 class="text-lg font-bold text-emerald-600">Berhasil</h2>
-  <p class="text-sm mt-1">Pengajuan cuti terkirim.</p>
-</div>
 
 </main>
 
 <script>
-/* ================= CONFIG ================= */
+/* ================= KONFIGURASI ================= */
 const SUPABASE_URL = 'https://ufiqibxdgwlysqhinqbz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_EVSVWnsUriOPA_O3RnGTpg_Zmd4pyAL';
 
-/* ================= INIT SUPABASE ================= */
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let pad;
+/* ================= INIT SUPABASE (WAJIB) ================= */
+const sb = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
-window.onload = () => {
-  pad = new SignaturePad(document.getElementById('pad'), {
-    backgroundColor:'#fff',
-    penColor:'#000'
-  });
-  setupAutocomplete();
-};
-
-/* ================= STEP ================= */
-function go(n){
-  ['step1','step2','step3'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-  document.getElementById('step'+n).classList.remove('hidden');
-}
-
-/* ================= AUTOCOMPLETE (public.pegawai) ================= */
+/* ================= AUTOCOMPLETE NAMA ================= */
 function setupAutocomplete(){
   const nama = document.getElementById('nama');
-  const nip = document.getElementById('nip');
-  const box = document.getElementById('acBox');
+  const nip  = document.getElementById('nip');
+  const box  = document.getElementById('acBox');
   let timer;
 
   nama.addEventListener('input', () => {
     const q = nama.value.trim();
     nip.value = '';
-
     clearTimeout(timer);
+
     if (q.length < 2){
       box.classList.add('hidden');
       box.innerHTML = '';
@@ -135,14 +92,21 @@ function setupAutocomplete(){
     }
 
     timer = setTimeout(async () => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('pegawai')
         .select('nama, nip_nik')
         .ilike('nama', q + '%')
         .order('nama')
         .limit(10);
 
-      if (error || !data?.length){
+      if (error){
+        console.error(error);
+        box.innerHTML = `<div class="p-3 text-red-500">Error query</div>`;
+        box.classList.remove('hidden');
+        return;
+      }
+
+      if (!data || data.length === 0){
         box.innerHTML = `<div class="p-3 text-slate-400">Tidak ada data</div>`;
         box.classList.remove('hidden');
         return;
@@ -152,10 +116,13 @@ function setupAutocomplete(){
       data.forEach(r => {
         const item = document.createElement('div');
         item.className = 'ac-item';
-        item.innerHTML = `<span>${r.nama}</span><span class="text-slate-500">${r.nip_nik}</span>`;
+        item.innerHTML = `
+          <span>${r.nama}</span>
+          <span class="text-slate-500">${r.nip_nik}</span>
+        `;
         item.onclick = () => {
           nama.value = r.nama;
-          nip.value = r.nip_nik;
+          nip.value  = r.nip_nik;
           box.classList.add('hidden');
         };
         box.appendChild(item);
@@ -166,16 +133,13 @@ function setupAutocomplete(){
   });
 
   document.addEventListener('click', e => {
-    if (!box.contains(e.target) && e.target !== nama) {
+    if (!box.contains(e.target) && e.target !== nama){
       box.classList.add('hidden');
     }
   });
 }
 
-/* ================= SUBMIT (dummy) ================= */
-async function submitForm(){
-  alert('Autocomplete SUDAH AKTIF. Submit bisa disambung ke pengajuan_cuti.');
-}
+window.onload = setupAutocomplete;
 </script>
 </body>
 </html>
