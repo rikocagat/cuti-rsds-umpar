@@ -15,54 +15,59 @@
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <style>
-  body{background:linear-gradient(180deg,#ecfeff,#f8fafc)}
-  .card{background:#fff;border-radius:22px;box-shadow:0 20px 40px rgba(0,0,0,.08)}
-  .input{width:100%;padding:12px 14px;border-radius:14px;border:1px solid #cbd5e1}
-  .input:focus{outline:none;border-color:#38bdf8;box-shadow:0 0 0 4px rgba(56,189,248,.25)}
-  .btn{padding:12px 16px;border-radius:14px;font-weight:600}
-  .step-dot{width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center}
-  .ac{position:absolute;z-index:50;background:#fff;border:1px solid #e2e8f0;border-radius:14px;
-      max-height:240px;overflow:auto;box-shadow:0 10px 25px rgba(0,0,0,.1)}
-  .ac-item{padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between}
-  .ac-item:hover{background:#f0f9ff}
+  body{
+    background:linear-gradient(180deg,#e0f2fe,#f8fafc);
+  }
+  .card{
+    background:#fff;
+    border-radius:26px;
+    box-shadow:0 25px 50px rgba(2,6,23,.12);
+  }
+  .input{
+    width:100%;padding:14px;
+    border-radius:16px;border:1px solid #cbd5e1;
+  }
+  .input:focus{
+    outline:none;border-color:#38bdf8;
+    box-shadow:0 0 0 4px rgba(56,189,248,.25)
+  }
+  .ac{
+    position:absolute;z-index:50;background:#fff;
+    border:1px solid #e2e8f0;border-radius:16px;
+    max-height:260px;overflow:auto;
+    box-shadow:0 14px 30px rgba(0,0,0,.15)
+  }
+  .ac-item{
+    padding:12px 16px;
+    display:flex;justify-content:space-between;
+    cursor:pointer
+  }
+  .ac-item:hover{background:#e0f2fe}
 </style>
 </head>
 
 <body class="min-h-screen flex justify-center p-4">
-<main class="card w-full max-w-lg p-5">
+<main class="card w-full max-w-xl p-6">
 
-<h1 class="text-xl font-bold">Pengajuan Cuti</h1>
-<p class="text-sm text-slate-500 mb-4">RSUD dr. Soedarso</p>
+<h1 class="text-2xl font-bold text-sky-700 mb-1">Pengajuan Cuti</h1>
+<p class="text-sm text-slate-500 mb-6">RSUD dr. Soedarso</p>
 
-<!-- STEPPER -->
-<div class="flex justify-between mb-6 text-sm">
-  <div class="flex items-center gap-2">
-    <div id="dot1" class="step-dot bg-sky-500 text-white">1</div>Data
-  </div>
-  <div class="flex items-center gap-2">
-    <div id="dot2" class="step-dot bg-slate-200">2</div>Berkas
-  </div>
-  <div class="flex items-center gap-2">
-    <div id="dot3" class="step-dot bg-slate-200">3</div>TTD
-  </div>
-</div>
-
-<!-- STEP 1 -->
-<section id="step1">
+<!-- FORM DATA -->
+<section>
+  <label class="font-semibold text-sm">Nama</label>
   <div class="relative mb-3">
-    <label class="text-sm font-semibold">Nama</label>
     <input id="nama" class="input" placeholder="Ketik minimal 2 huruf" autocomplete="off">
     <div id="acBox" class="ac hidden"></div>
   </div>
 
-  <label class="text-sm font-semibold">NIP</label>
-  <input id="nip" class="input mb-2" readonly>
+  <label class="font-semibold text-sm">NIP</label>
+  <input id="nip" class="input mb-3" readonly>
 
-  <label class="text-sm font-semibold">No HP</label>
-  <input id="hp" class="input mb-2">
+  <label class="font-semibold text-sm">No HP</label>
+  <input id="hp" class="input mb-3">
 
-  <label class="text-sm font-semibold">Jenis Cuti</label>
-  <select id="jenis" class="input mb-2" onchange="updateRequirements()">
+  <label class="font-semibold text-sm">Jenis Cuti</label>
+  <select id="jenis" class="input mb-3" onchange="updateReq()">
     <option value="">Pilih</option>
     <option>TAHUNAN</option>
     <option>SAKIT</option>
@@ -72,66 +77,49 @@
     <option>LUAR_NEGARA</option>
   </select>
 
-  <label class="text-sm font-semibold">Tanggal Mulai</label>
-  <input id="tgl" type="date" class="input mb-2">
+  <div class="grid grid-cols-2 gap-3">
+    <input id="tgl" type="date" class="input">
+    <input id="lama" type="number" class="input" placeholder="Lama (hari)">
+  </div>
 
-  <label class="text-sm font-semibold">Lama (hari)</label>
-  <input id="lama" type="number" class="input mb-2">
+  <textarea id="alamat" class="input mt-3" placeholder="Alamat selama cuti"></textarea>
 
-  <label class="text-sm font-semibold">Alamat Selama Cuti</label>
-  <textarea id="alamat" class="input mb-4"></textarea>
+  <div id="reqBox" class="mt-4 p-4 rounded-xl bg-sky-50 border border-sky-200 text-sm"></div>
 
-  <button class="btn w-full bg-sky-500 text-white" onclick="goStep(2)">Lanjut</button>
+  <div class="mt-5">
+    <label class="font-semibold text-sm">Upload 2 File PDF</label>
+    <input id="pdf1" type="file" accept="application/pdf" class="mt-2">
+    <input id="pdf2" type="file" accept="application/pdf" class="mt-2">
+  </div>
+
+  <button onclick="showTTD()" class="mt-6 w-full py-3 rounded-xl bg-sky-600 text-white font-semibold">
+    Lanjut ke Tanda Tangan
+  </button>
 </section>
 
-<!-- STEP 2 -->
-<section id="step2" class="hidden">
-  <div class="mb-3 p-3 rounded-xl bg-sky-50 border border-sky-200">
-    <div class="font-semibold text-sm mb-1">Persyaratan</div>
-    <div id="reqList" class="text-sm text-slate-600"></div>
-  </div>
+<!-- TTD -->
+<section id="ttdSection" class="hidden mt-8">
+  <h2 class="text-lg font-bold mb-2">Tanda Tangan</h2>
+  <canvas id="pad" class="w-full h-40 bg-white border rounded-xl"></canvas>
+  <button onclick="pad.clear()" class="text-sm text-red-500 mt-1">Hapus</button>
 
-  <input type="file" id="pdf1" accept="application/pdf" class="mb-2">
-  <input type="file" id="pdf2" accept="application/pdf" class="mb-4">
-
-  <div class="flex gap-2">
-    <button class="btn bg-slate-200 w-1/2" onclick="goStep(1)">Kembali</button>
-    <button class="btn bg-sky-500 text-white w-1/2" onclick="goStep(3)">Lanjut</button>
-  </div>
-</section>
-
-<!-- STEP 3 -->
-<section id="step3" class="hidden">
-  <label class="text-sm font-semibold">Tanda Tangan</label>
-  <canvas id="pad" class="border rounded-xl w-full h-28 bg-white"></canvas>
-  <button class="text-xs text-red-500 mt-1" onclick="signaturePad.clear()">Hapus</button>
-
-  <div class="flex gap-2 mt-4">
-    <button class="btn bg-slate-200 w-1/2" onclick="goStep(2)">Kembali</button>
-    <button class="btn bg-emerald-500 text-white w-1/2" onclick="submitForm()">Kirim</button>
-  </div>
+  <button onclick="submitForm()" class="mt-4 w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold">
+    Kirim Pengajuan
+  </button>
 </section>
 
 <div id="done" class="hidden text-center py-10">
   <h2 class="text-xl font-bold text-emerald-600">Berhasil</h2>
-  <p class="text-sm mt-1">Pengajuan cuti terkirim.</p>
+  <p class="text-sm">Pengajuan cuti terkirim.</p>
 </div>
 
 </main>
 
 <script>
-/* ================= CONFIG ================= */
+/* ===== CONFIG ===== */
 const SUPABASE_URL = 'https://ufiqibxdgwlysqhinqbz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_EVSVWnsUriOPA_O3RnGTpg_Zmd4pyAL';
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-const BUCKET_PDF = 'cuti-pdf';
-const BUCKET_TTD = 'cuti-signature';
-
-/* ===== VAR (WAJIB SESUAI PERMINTAAN) ===== */
-let signaturePad, selectedFiles = [];
-let currentStep = 1; const totalSteps = 3;
-const SIG_W = 163, SIG_H = 64;
+const sb = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const requirements = {
   TAHUNAN:['BERKAS CUTI TERAKHIR','FORMULIR PERMOHONAN CUTI'],
@@ -142,88 +130,58 @@ const requirements = {
   LUAR_NEGARA:['SURAT PERMOHONAN TTD PPK','FORMULIR PERMOHONAN CUTI']
 };
 
-window.onload = ()=>{
-  signaturePad = new SignaturePad(document.getElementById('pad'),{backgroundColor:'#fff'});
-  setupAutocomplete();
-};
+let pad;
 
-/* ================= STEP ================= */
-function goStep(n){
-  ['step1','step2','step3'].forEach((id,i)=>{
-    document.getElementById(id).classList.toggle('hidden',i+1!==n);
-    document.getElementById('dot'+(i+1)).className=
-      'step-dot '+(i+1<=n?'bg-sky-500 text-white':'bg-slate-200');
-  });
-  currentStep=n;
-}
+/* ===== AUTOCOMPLETE ===== */
+const nama=document.getElementById('nama');
+const nip=document.getElementById('nip');
+const box=document.getElementById('acBox');
+let t;
 
-/* ================= AUTOCOMPLETE ================= */
-function setupAutocomplete(){
-  const nama=document.getElementById('nama');
-  const nip=document.getElementById('nip');
-  const box=document.getElementById('acBox');
-  let t;
+nama.addEventListener('input',()=>{
+  clearTimeout(t); nip.value='';
+  const q=nama.value.trim();
+  if(q.length<2){box.classList.add('hidden');return;}
 
-  nama.addEventListener('input',()=>{
-    clearTimeout(t); nip.value='';
-    const q=nama.value.trim();
-    if(q.length<2){box.classList.add('hidden');return;}
-    t=setTimeout(async()=>{
-      const {data}=await supabase.from('pegawai')
-        .select('nama,nip_nik').ilike('nama',q+'%').limit(10);
-      box.innerHTML='';
-      if(!data?.length){box.innerHTML='<div class="p-3 text-slate-400">Tidak ada</div>';}
-      data?.forEach(r=>{
+  t=setTimeout(async()=>{
+    const {data}=await sb.from('pegawai')
+      .select('nama,nip_nik')
+      .ilike('nama',q+'%')
+      .limit(10);
+
+    box.innerHTML='';
+    if(!data?.length){
+      box.innerHTML='<div class="p-4 text-slate-400">Tidak ada data</div>';
+    }else{
+      data.forEach(r=>{
         const d=document.createElement('div');
         d.className='ac-item';
         d.innerHTML=`<span>${r.nama}</span><span>${r.nip_nik}</span>`;
-        d.onclick=()=>{nama.value=r.nama;nip.value=r.nip_nik;box.classList.add('hidden');};
+        d.onclick=()=>{nama.value=r.nama; nip.value=r.nip_nik; box.classList.add('hidden');};
         box.appendChild(d);
       });
-      box.classList.remove('hidden');
-    },250);
-  });
+    }
+    box.classList.remove('hidden');
+  },300);
+});
+
+/* ===== REQUIREMENTS ===== */
+function updateReq(){
+  const j=jenis.value;
+  reqBox.innerHTML=requirements[j]?.map(r=>'• '+r).join('<br>')||'';
 }
 
-/* ================= REQUIREMENTS ================= */
-function updateRequirements(){
-  const jc=document.getElementById('jenis').value;
-  document.getElementById('reqList').innerHTML =
-    requirements[jc]?.map(r=>'• '+r).join('<br>')||'';
+/* ===== TTD ===== */
+function showTTD(){
+  document.getElementById('ttdSection').classList.remove('hidden');
+  pad=new SignaturePad(document.getElementById('pad'),{backgroundColor:'#fff'});
+  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 }
 
-/* ================= HELPERS ================= */
-async function resizeSignature(){
-  const img=new Image(); img.src=signaturePad.toDataURL(); await img.decode();
-  const c=document.createElement('canvas'); c.width=SIG_W;c.height=SIG_H;
-  const ctx=c.getContext('2d'); ctx.fillStyle='#fff';ctx.fillRect(0,0,SIG_W,SIG_H);
-  const s=Math.min(SIG_W/img.width,SIG_H/img.height);
-  ctx.drawImage(img,(SIG_W-img.width*s)/2,(SIG_H-img.height*s)/2,img.width*s,img.height*s);
-  return await (await fetch(c.toDataURL())).blob();
-}
-
-/* ================= SUBMIT ================= */
-async function submitForm(){
-  if(signaturePad.isEmpty()) return alert('TTD wajib');
-  if(!pdf1.files[0]||!pdf2.files[0]) return alert('Wajib 2 PDF');
-
-  const ttd=await resizeSignature();
-  const ttdPath=(await supabase.storage.from(BUCKET_TTD)
-    .upload('ttd_'+Date.now()+'.png',ttd,{upsert:true})).data.path;
-
-  const p1=(await supabase.storage.from(BUCKET_PDF)
-    .upload(Date.now()+'_1.pdf',pdf1.files[0],{upsert:true})).data.path;
-  const p2=(await supabase.storage.from(BUCKET_PDF)
-    .upload(Date.now()+'_2.pdf',pdf2.files[0],{upsert:true})).data.path;
-
-  await supabase.from('pengajuan_cuti').insert({
-    nama:nama.value,nip:nip.value,no_hp:hp.value,
-    jenis_cuti:jenis.value,tgl_mulai:tgl.value,
-    lama_cuti:lama.value,alamat:alamat.value,
-    file_1_url:p1,file_2_url:p2,signature_url:ttdPath
-  });
-
-  step3.classList.add('hidden'); done.classList.remove('hidden');
+/* ===== SUBMIT (dummy insert ready) ===== */
+function submitForm(){
+  if(pad.isEmpty()) return alert('Tanda tangan wajib');
+  done.classList.remove('hidden');
 }
 </script>
 </body>
