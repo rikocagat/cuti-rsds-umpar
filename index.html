@@ -240,12 +240,60 @@ function showTTD(){
 function clearPad(){ pad.clear(); }
 
 /* SUBMIT */
-function submitForm(){
+async function submitForm(){
   if(pad.isEmpty()) return alert('Tanda tangan wajib');
-  document.querySelector('section').classList.add('hidden');
-  document.getElementById('ttdSection').classList.add('hidden');
+
+  const file1 = document.querySelectorAll('input[type=file]')[0].files[0];
+  const file2 = document.querySelectorAll('input[type=file]')[1].files[0];
+
+  if(!file1 || !file2) return alert('Dua file PDF wajib diupload');
+
+  const uid = crypto.randomUUID();
+
+  /* ===== UPLOAD FILE PDF ===== */
+  const { data:pdf1 } = await sb.storage
+    .from('cuti')
+    .upload(`pdf/${uid}_1.pdf`, file1);
+
+  const { data:pdf2 } = await sb.storage
+    .from('cuti')
+    .upload(`pdf/${uid}_2.pdf`, file2);
+
+  const file1_url = sb.storage.from('cuti').getPublicUrl(pdf1.path).data.publicUrl;
+  const file2_url = sb.storage.from('cuti').getPublicUrl(pdf2.path).data.publicUrl;
+
+  /* ===== UPLOAD SIGNATURE ===== */
+  const blob = await (await fetch(pad.toDataURL())).blob();
+
+  const { data:sig } = await sb.storage
+    .from('cuti')
+    .upload(`ttd/${uid}.png`, blob, { contentType:'image/png' });
+
+  const signature_url = sb.storage.from('cuti').getPublicUrl(sig.path).data.publicUrl;
+
+  /* ===== INSERT DATABASE ===== */
+  const { error } = await sb.from('pengajuan_cuti').insert({
+    nama: nama.value,
+    nip: nip.value,
+    no_hp: hp.value,
+    jenis_cuti: jenis.value,
+    tgl_mulai: tgl.value,
+    lama_cuti: lama.value,
+    alamat: alamat.value,
+    file_1_url,
+    file_2_url,
+    signature_url,
+    status: 'DIAJUKAN'
+  });
+
+  if(error){
+    alert('Gagal menyimpan: '+error.message);
+    return;
+  }
+
   document.getElementById('done').classList.remove('hidden');
 }
+
 </script>
 </body>
 </html>
