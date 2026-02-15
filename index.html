@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pengajuan Cuti</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Signature Pad -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
+<style>
+  body{background:#f1f5f9}
+  .input{width:100%;padding:12px;border-radius:12px;border:1px solid #cbd5e1}
+  .btn{width:100%;padding:12px;border-radius:12px;font-weight:600}
+  .ac{position:absolute;z-index:20;background:#fff;border:1px solid #e2e8f0;border-radius:12px;max-height:220px;overflow:auto;box-shadow:0 10px 20px rgba(0,0,0,.08)}
+  .ac-item{padding:10px 12px;cursor:pointer;display:flex;justify-content:space-between}
+  .ac-item:hover{background:#f0f9ff}
+</style>
+</head>
+
+<body class="min-h-screen flex justify-center p-4">
+<main class="bg-white w-full max-w-md rounded-2xl shadow-xl p-5 relative">
+
+<h1 class="text-xl font-bold mb-1">Pengajuan Cuti</h1>
+<p class="text-sm text-slate-500 mb-4">RSUD dr. Soedarso</p>
+
+<!-- STEP 1 -->
+<section id="step1">
+  <div class="relative mb-2">
+    <input id="nama" class="input" placeholder="Nama (ketik min. 2 huruf)" autocomplete="off">
+    <div id="acBox" class="ac hidden"></div>
+  </div>
+
+  <input id="nip" class="input mb-2" placeholder="NIP" readonly>
+  <input id="hp" class="input mb-2" placeholder="No HP">
+
+  <select id="jenis" class="input mb-2">
+    <option value="">Jenis Cuti</option>
+    <option>TAHUNAN</option>
+    <option>SAKIT</option>
+    <option>MELAHIRKAN</option>
+    <option>BESAR</option>
+    <option>ALASAN_PENTING</option>
+    <option>LUAR_NEGARA</option>
+  </select>
+
+  <input id="tgl" type="date" class="input mb-2">
+  <input id="lama" type="number" class="input mb-2" placeholder="Lama (hari)">
+  <textarea id="alamat" class="input mb-3" placeholder="Alamat selama cuti"></textarea>
+
+  <button class="btn bg-sky-500 text-white" onclick="go(2)">Next</button>
+</section>
+
+<!-- STEP 2 -->
+<section id="step2" class="hidden">
+  <p class="text-sm mb-2">Upload 2 file PDF</p>
+  <input id="pdf1" type="file" accept="application/pdf" class="mb-2">
+  <input id="pdf2" type="file" accept="application/pdf" class="mb-4">
+
+  <div class="flex gap-2">
+    <button class="btn bg-slate-200" onclick="go(1)">Kembali</button>
+    <button class="btn bg-sky-500 text-white" onclick="go(3)">Next</button>
+  </div>
+</section>
+
+<!-- STEP 3 -->
+<section id="step3" class="hidden">
+  <p class="text-sm mb-2">Tanda Tangan</p>
+  <canvas id="pad" class="border rounded w-full h-24 bg-white"></canvas>
+  <button class="text-sm text-red-500 mt-1" onclick="pad.clear()">Hapus</button>
+
+  <div class="flex gap-2 mt-4">
+    <button class="btn bg-slate-200" onclick="go(2)">Kembali</button>
+    <button class="btn bg-emerald-500 text-white" onclick="submitForm()">Ajukan</button>
+  </div>
+</section>
+
+<div id="done" class="hidden text-center p-6">
+  <h2 class="text-lg font-bold text-emerald-600">Berhasil</h2>
+  <p class="text-sm mt-1">Pengajuan terkirim.</p>
+</div>
+
+</main>
+
+<script>
+/* ========= CONFIG ========= */
+const SUPABASE_URL = 'https://PROJECT_ID.supabase.co';
+const SUPABASE_ANON_KEY = 'PUBLIC_ANON_KEY';
+const BUCKET_PDF = 'cuti-pdf';
+const BUCKET_TTD = 'cuti-signature';
+
+/* ========= INIT ========= */
+const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let pad;
+
+window.onload = () => {
+  pad = new SignaturePad(document.getElementById('pad'), {backgroundColor:'#fff', penColor:'#000'});
+  setupAutocomplete();
+};
+
+/* ========= STEP ========= */
+function go(n){
+  ['step1','step2','step3'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('step'+n).classList.remove('hidden');
+}
+
+/* ========= AUTOCOMPLETE NAMA (SUPABASE) ========= */
+function setupAutocomplete(){
+  const nama = document.getElementById('nama');
+  const nip = document.getElementById('nip');
+  const box = document.getElementById('acBox');
+  let t=null;
+
+  nama.addEventListener('input', ()=>{
+    const q = nama.value.trim();
+    nip.value='';
+    if(t) clearTimeout(t);
+    if(q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
+
+    t = setTimeout(async ()=>{
+      const { data, error } = await supabase
+        .from('pegawai')
+        .select('nama, nip_nik')
+        .ilike('nama', q + '%')
+        .limit(10);
+
+      if(error || !data?.length){
+        box.innerHTML='<div class="p-3 text-slate-400">Tidak ada data</div>';
+        box.classList.remove('hidden');
+        return;
+      }
+
+      box.innerHTML='';
+      data.forEach(r=>{
+        const d=document.createElement('div');
+        d.className='ac-item';
+        d.innerHTML=`<span>${r.nama}</span><span class="text-slate-500">${r.nip_nik}</span>`;
+        d.onclick=()=>{
+          nama.value=r.nama;
+          nip.value=r.nip_nik;
+          box.classList.add('hidden');
+        };
+        box.appendChild(d);
+      });
+      box.classList.remove('hidden');
+    }, 250);
+  });
+
+  document.addEventListener('click', e=>{
+    if(!box.contains(e.target) && e.target!==nama) box.classList.add('hidden');
+  });
+}
+
+/* ========= HELPERS ========= */
+async function resizeSignature(){
+  const img=new Image(); img.src=pad.toDataURL('image/png'); await img.decode();
+  const c=document.createElement('canvas'); c.width=163; c.height=64;
+  const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,163,64);
+  const s=Math.min(163/img.width,64/img.height);
+  const w=img.width*s,h=img.height*s;
+  ctx.drawImage(img,(163-w)/2,(64-h)/2,w,h);
+  return await (await fetch(c.toDataURL('image/png'))).blob();
+}
+async function upload(bucket,file,name){
+  const {data,error}=await supabase.storage.from(bucket).upload(name,file);
+  if(error) throw error; return data.path;
+}
+
+/* ========= SUBMIT ========= */
+async function submitForm(){
+  if(pad.isEmpty()){ alert('TTD wajib'); return; }
+  if(!pdf1.files[0]||!pdf2.files[0]){ alert('Wajib 2 PDF'); return; }
+
+  try{
+    const ttd=await resizeSignature();
+    const ttdPath=await upload(BUCKET_TTD, ttd, 'ttd_'+Date.now()+'.png');
+    const p1=await upload(BUCKET_PDF, pdf1.files[0], Date.now()+'_1.pdf');
+    const p2=await upload(BUCKET_PDF, pdf2.files[0], Date.now()+'_2.pdf');
+
+    const {error}=await supabase.from('pengajuan_cuti').insert({
+      nama:nama.value,
+      nip:nip.value,
+      no_hp:hp.value,
+      jenis_cuti:jenis.value,
+      tgl_mulai:tgl.value,
+      lama_cuti:lama.value,
+      alamat:alamat.value,
+      file_1_url:p1,
+      file_2_url:p2,
+      signature_url:ttdPath
+    });
+    if(error) throw error;
+
+    step3.classList.add('hidden'); done.classList.remove('hidden');
+  }catch(e){ alert('Gagal: '+e.message); }
+}
+</script>
+</body>
+</html>
