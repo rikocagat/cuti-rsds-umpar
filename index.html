@@ -8,180 +8,243 @@
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Supabase JS v2 -->
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- Signature Pad -->
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <style>
-  body{
-    background:linear-gradient(180deg,#e0f2fe,#f8fafc);
-  }
-  .card{
-    background:#fff;
-    border-radius:26px;
-    box-shadow:0 25px 50px rgba(2,6,23,.12);
-  }
-  .input{
-    width:100%;padding:14px;
-    border-radius:16px;border:1px solid #cbd5e1;
-  }
-  .input:focus{
-    outline:none;border-color:#38bdf8;
-    box-shadow:0 0 0 4px rgba(56,189,248,.25)
-  }
-  .ac{
-    position:absolute;z-index:50;background:#fff;
-    border:1px solid #e2e8f0;border-radius:16px;
-    max-height:260px;overflow:auto;
-    box-shadow:0 14px 30px rgba(0,0,0,.15)
-  }
-  .ac-item{
-    padding:12px 16px;
-    display:flex;justify-content:space-between;
-    cursor:pointer
-  }
-  .ac-item:hover{background:#e0f2fe}
+body{
+  background:radial-gradient(circle at top,#e0f2fe,#f8fafc);
+}
+.card{
+  background:#fff;
+  border-radius:28px;
+  box-shadow:0 30px 60px rgba(15,23,42,.15);
+}
+.input{
+  width:100%;
+  padding:14px 16px;
+  border-radius:16px;
+  border:1px solid #cbd5e1;
+  font-size:15px;
+}
+.input:focus{
+  outline:none;
+  border-color:#38bdf8;
+  box-shadow:0 0 0 4px rgba(56,189,248,.25);
+}
+.ac{
+  position:absolute;
+  z-index:50;
+  background:#fff;
+  border-radius:18px;
+  border:1px solid #e2e8f0;
+  max-height:260px;
+  overflow:auto;
+  width:100%;
+  box-shadow:0 20px 40px rgba(0,0,0,.15);
+}
+.ac-item{
+  padding:14px 18px;
+  display:flex;
+  justify-content:space-between;
+  cursor:pointer;
+}
+.ac-item:hover{
+  background:#e0f2fe;
+}
+.req-card{
+  background:linear-gradient(135deg,#f0f9ff,#e0f2fe);
+  border:1px solid #bae6fd;
+  border-radius:18px;
+  padding:16px;
+}
+canvas{
+  touch-action:none;
+}
 </style>
 </head>
 
-<body class="min-h-screen flex justify-center p-4">
-<main class="card w-full max-w-xl p-6">
+<body class="min-h-screen flex justify-center p-6">
+<main class="card w-full max-w-2xl p-8">
 
-<h1 class="text-2xl font-bold text-sky-700 mb-1">Pengajuan Cuti</h1>
-<p class="text-sm text-slate-500 mb-6">RSUD dr. Soedarso</p>
+<h1 class="text-3xl font-bold text-sky-700">Pengajuan Cuti</h1>
+<p class="text-sm text-slate-500 mb-8">RSUD dr. Soedarso</p>
 
-<!-- FORM DATA -->
-<section>
-  <label class="font-semibold text-sm">Nama</label>
-  <div class="relative mb-3">
+<!-- DATA -->
+<section class="space-y-4">
+
+<div>
+  <label class="font-semibold text-sm">Nama Pegawai</label>
+  <div class="relative">
     <input id="nama" class="input" placeholder="Ketik minimal 2 huruf" autocomplete="off">
     <div id="acBox" class="ac hidden"></div>
   </div>
+</div>
 
+<div>
   <label class="font-semibold text-sm">NIP</label>
-  <input id="nip" class="input mb-3" readonly>
+  <input id="nip" class="input bg-slate-100" readonly>
+</div>
 
+<div>
   <label class="font-semibold text-sm">No HP</label>
-  <input id="hp" class="input mb-3">
+  <input id="hp" class="input">
+</div>
 
+<div>
   <label class="font-semibold text-sm">Jenis Cuti</label>
-  <select id="jenis" class="input mb-3" onchange="updateReq()">
-    <option value="">Pilih</option>
-    <option>TAHUNAN</option>
-    <option>SAKIT</option>
-    <option>MELAHIRKAN</option>
-    <option>BESAR</option>
-    <option>ALASAN_PENTING</option>
-    <option>LUAR_NEGARA</option>
+  <select id="jenis" class="input">
+    <option value="">-- Pilih Jenis Cuti --</option>
+    <option value="TAHUNAN">Cuti Tahunan</option>
+    <option value="SAKIT">Cuti Sakit</option>
+    <option value="MELAHIRKAN">Cuti Melahirkan</option>
+    <option value="BESAR">Cuti Besar</option>
+    <option value="ALASAN_PENTING">Alasan Penting</option>
+    <option value="LUAR_NEGARA">Luar Negeri</option>
   </select>
+</div>
 
-  <div class="grid grid-cols-2 gap-3">
+<div class="grid grid-cols-2 gap-4">
+  <div>
+    <label class="font-semibold text-sm">Tanggal Mulai</label>
     <input id="tgl" type="date" class="input">
-    <input id="lama" type="number" class="input" placeholder="Lama (hari)">
   </div>
-
-  <textarea id="alamat" class="input mt-3" placeholder="Alamat selama cuti"></textarea>
-
-  <div id="reqBox" class="mt-4 p-4 rounded-xl bg-sky-50 border border-sky-200 text-sm"></div>
-
-  <div class="mt-5">
-    <label class="font-semibold text-sm">Upload 2 File PDF</label>
-    <input id="pdf1" type="file" accept="application/pdf" class="mt-2">
-    <input id="pdf2" type="file" accept="application/pdf" class="mt-2">
+  <div>
+    <label class="font-semibold text-sm">Lama (hari)</label>
+    <input id="lama" type="number" class="input">
   </div>
+</div>
 
-  <button onclick="showTTD()" class="mt-6 w-full py-3 rounded-xl bg-sky-600 text-white font-semibold">
-    Lanjut ke Tanda Tangan
-  </button>
+<div>
+  <label class="font-semibold text-sm">Alamat Selama Cuti</label>
+  <textarea id="alamat" class="input h-24"></textarea>
+</div>
+
+<!-- SYARAT -->
+<div id="reqBox" class="hidden req-card mt-4"></div>
+
+<!-- FILE -->
+<div class="mt-6">
+  <label class="font-semibold text-sm">Upload 2 File PDF</label>
+  <input type="file" accept="application/pdf" class="mt-2 block">
+  <input type="file" accept="application/pdf" class="mt-2 block">
+</div>
+
+<button onclick="showTTD()" class="mt-8 w-full py-4 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-lg transition">
+  Lanjut Tanda Tangan
+</button>
+
 </section>
 
 <!-- TTD -->
-<section id="ttdSection" class="hidden mt-8">
-  <h2 class="text-lg font-bold mb-2">Tanda Tangan</h2>
-  <canvas id="pad" class="w-full h-40 bg-white border rounded-xl"></canvas>
-  <button onclick="pad.clear()" class="text-sm text-red-500 mt-1">Hapus</button>
+<section id="ttdSection" class="hidden mt-10">
+  <h2 class="text-xl font-bold mb-3">Tanda Tangan Digital</h2>
 
-  <button onclick="submitForm()" class="mt-4 w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold">
-    Kirim Pengajuan
-  </button>
+  <div class="border-2 border-dashed border-sky-300 rounded-2xl p-3 bg-sky-50">
+    <canvas id="pad" class="w-full h-48 bg-white rounded-xl"></canvas>
+  </div>
+
+  <div class="flex justify-between mt-3">
+    <button onclick="clearPad()" class="text-red-500 font-semibold">Hapus</button>
+    <button onclick="submitForm()" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+      Kirim Pengajuan
+    </button>
+  </div>
 </section>
 
-<div id="done" class="hidden text-center py-10">
-  <h2 class="text-xl font-bold text-emerald-600">Berhasil</h2>
-  <p class="text-sm">Pengajuan cuti terkirim.</p>
+<div id="done" class="hidden text-center py-12">
+  <h2 class="text-2xl font-bold text-emerald-600">Berhasil</h2>
+  <p class="text-slate-500 mt-2">Pengajuan cuti berhasil dikirim</p>
 </div>
 
 </main>
 
 <script>
-/* ===== CONFIG ===== */
-const SUPABASE_URL = 'https://ufiqibxdgwlysqhinqbz.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_EVSVWnsUriOPA_O3RnGTpg_Zmd4pyAL';
-const sb = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/* CONFIG */
+const sb = supabase.createClient(
+  'https://ufiqibxdgwlysqhinqbz.supabase.co',
+  'sb_publishable_EVSVWnsUriOPA_O3RnGTpg_Zmd4pyAL'
+);
 
 const requirements = {
-  TAHUNAN:['BERKAS CUTI TERAKHIR','FORMULIR PERMOHONAN CUTI'],
-  SAKIT:['SURAT KETERANGAN DOKTER','FORMULIR PERMOHONAN CUTI'],
-  MELAHIRKAN:['SURAT KETERANGAN DOKTER','FORMULIR PERMOHONAN CUTI'],
-  BESAR:['FORMULIR PERMOHONAN CUTI TTD KABID/KABAG'],
-  ALASAN_PENTING:['BUKTI ALASAN PENTING','FORMULIR PERMOHONAN CUTI'],
-  LUAR_NEGARA:['SURAT PERMOHONAN TTD PPK','FORMULIR PERMOHONAN CUTI']
+  TAHUNAN:['Berkas cuti terakhir','Formulir permohonan cuti'],
+  SAKIT:['Surat keterangan dokter','Formulir permohonan cuti'],
+  MELAHIRKAN:['Surat keterangan dokter','Formulir permohonan cuti'],
+  BESAR:['Formulir cuti TTD Kabid/Kabag'],
+  ALASAN_PENTING:['Bukti alasan penting','Formulir permohonan cuti'],
+  LUAR_NEGARA:['Surat permohonan TTD PPK','Formulir permohonan cuti']
 };
 
-let pad;
-
-/* ===== AUTOCOMPLETE ===== */
-const nama=document.getElementById('nama');
-const nip=document.getElementById('nip');
-const box=document.getElementById('acBox');
-let t;
+/* AUTOCOMPLETE */
+const nama = document.getElementById('nama');
+const nip  = document.getElementById('nip');
+const acBox= document.getElementById('acBox');
+let timer;
 
 nama.addEventListener('input',()=>{
-  clearTimeout(t); nip.value='';
-  const q=nama.value.trim();
-  if(q.length<2){box.classList.add('hidden');return;}
+  clearTimeout(timer);
+  nip.value='';
+  const q = nama.value.trim();
+  if(q.length<2){ acBox.classList.add('hidden'); return; }
 
-  t=setTimeout(async()=>{
-    const {data}=await sb.from('pegawai')
+  timer=setTimeout(async()=>{
+    const {data,error}=await sb
+      .from('pegawai')
       .select('nama,nip_nik')
-      .ilike('nama',q+'%')
+      .ilike('nama',`${q}%`)
       .limit(10);
 
-    box.innerHTML='';
-    if(!data?.length){
-      box.innerHTML='<div class="p-4 text-slate-400">Tidak ada data</div>';
+    acBox.innerHTML='';
+    if(error || !data.length){
+      acBox.innerHTML='<div class="p-4 text-slate-400">Data tidak ditemukan</div>';
     }else{
       data.forEach(r=>{
-        const d=document.createElement('div');
-        d.className='ac-item';
-        d.innerHTML=`<span>${r.nama}</span><span>${r.nip_nik}</span>`;
-        d.onclick=()=>{nama.value=r.nama; nip.value=r.nip_nik; box.classList.add('hidden');};
-        box.appendChild(d);
+        const div=document.createElement('div');
+        div.className='ac-item';
+        div.innerHTML=`<span>${r.nama}</span><span>${r.nip_nik}</span>`;
+        div.onclick=()=>{
+          nama.value=r.nama;
+          nip.value=r.nip_nik;
+          acBox.classList.add('hidden');
+        };
+        acBox.appendChild(div);
       });
     }
-    box.classList.remove('hidden');
+    acBox.classList.remove('hidden');
   },300);
 });
 
-/* ===== REQUIREMENTS ===== */
-function updateReq(){
-  const j=jenis.value;
-  reqBox.innerHTML=requirements[j]?.map(r=>'• '+r).join('<br>')||'';
-}
+/* SYARAT */
+const jenis=document.getElementById('jenis');
+const reqBox=document.getElementById('reqBox');
 
-/* ===== TTD ===== */
+jenis.addEventListener('change',()=>{
+  const r=requirements[jenis.value];
+  if(!r){ reqBox.classList.add('hidden'); return; }
+  reqBox.innerHTML='<b>Syarat Dokumen:</b><br>'+r.map(i=>'• '+i).join('<br>');
+  reqBox.classList.remove('hidden');
+});
+
+/* TTD */
+let pad;
 function showTTD(){
   document.getElementById('ttdSection').classList.remove('hidden');
-  pad=new SignaturePad(document.getElementById('pad'),{backgroundColor:'#fff'});
+  if(!pad){
+    pad=new SignaturePad(document.getElementById('pad'),{backgroundColor:'#fff'});
+  }
   window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 }
+function clearPad(){ pad.clear(); }
 
-/* ===== SUBMIT (dummy insert ready) ===== */
+/* SUBMIT */
 function submitForm(){
   if(pad.isEmpty()) return alert('Tanda tangan wajib');
-  done.classList.remove('hidden');
+  document.querySelector('section').classList.add('hidden');
+  document.getElementById('ttdSection').classList.add('hidden');
+  document.getElementById('done').classList.remove('hidden');
 }
 </script>
 </body>
