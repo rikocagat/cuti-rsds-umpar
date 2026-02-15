@@ -16,7 +16,7 @@
   body{background:#f1f5f9}
   .input{width:100%;padding:12px;border-radius:12px;border:1px solid #cbd5e1}
   .btn{width:100%;padding:12px;border-radius:12px;font-weight:600}
-  .ac{position:absolute;z-index:20;background:#fff;border:1px solid #e2e8f0;border-radius:12px;max-height:220px;overflow:auto;box-shadow:0 10px 20px rgba(0,0,0,.08)}
+  .ac{position:absolute;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;max-height:220px;overflow:auto;box-shadow:0 10px 20px rgba(0,0,0,.08)}
   .ac-item{padding:10px 12px;cursor:pointer;display:flex;justify-content:space-between}
   .ac-item:hover{background:#f0f9ff}
 </style>
@@ -81,24 +81,22 @@
 
 <div id="done" class="hidden text-center p-6">
   <h2 class="text-lg font-bold text-emerald-600">Berhasil</h2>
-  <p class="text-sm mt-1">Pengajuan terkirim.</p>
+  <p class="text-sm mt-1">Pengajuan cuti terkirim.</p>
 </div>
 
 </main>
 
 <script>
-/* ========= CONFIG ========= */
+/* ========= CONFIG (WAJIB GANTI) ========= */
 const SUPABASE_URL = 'https://ufiqibxdgwlysqhinqbz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmaXFpYnhkZ3dseXNxaGlucWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDQ3OTksImV4cCI6MjA4NjcyMDc5OX0.6CrrEnC1E3FGeIHSW9uDAdOdVKeC-8w3QwYPJ3M4opA';
-const BUCKET_PDF = 'cuti-pdf';
-const BUCKET_TTD = 'cuti-signature';
 
 /* ========= INIT ========= */
 const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let pad;
 
 window.onload = () => {
-  pad = new SignaturePad(document.getElementById('pad'), {backgroundColor:'#fff', penColor:'#000'});
+  pad = new SignaturePad(document.getElementById('pad'), {backgroundColor:'#fff'});
   setupAutocomplete();
 };
 
@@ -108,95 +106,77 @@ function go(n){
   document.getElementById('step'+n).classList.remove('hidden');
 }
 
-/* ========= AUTOCOMPLETE NAMA (SUPABASE) ========= */
+/* ========= AUTOCOMPLETE (FIXED) ========= */
 function setupAutocomplete(){
   const nama = document.getElementById('nama');
-  const nip = document.getElementById('nip');
-  const box = document.getElementById('acBox');
-  let t=null;
+  const nip  = document.getElementById('nip');
+  const box  = document.getElementById('acBox');
+  let timer  = null;
 
-  nama.addEventListener('input', ()=>{
+  nama.addEventListener('input', () => {
     const q = nama.value.trim();
-    nip.value='';
-    if(t) clearTimeout(t);
-    if(q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
+    nip.value = '';
 
-    t = setTimeout(async ()=>{
+    if (timer) clearTimeout(timer);
+    if (q.length < 2) {
+      box.classList.add('hidden');
+      box.innerHTML = '';
+      return;
+    }
+
+    timer = setTimeout(async () => {
       const { data, error } = await supabase
         .from('pegawai')
         .select('nama, nip_nik')
-        .ilike('nama', q + '%')
+        .ilike('nama', `%${q}%`)
         .limit(10);
 
-      if(error || !data?.length){
-        box.innerHTML='<div class="p-3 text-slate-400">Tidak ada data</div>';
+      if (error || !data || data.length === 0) {
+        box.innerHTML = '<div class="p-3 text-slate-400">Tidak ada data</div>';
         box.classList.remove('hidden');
         return;
       }
 
-      box.innerHTML='';
-      data.forEach(r=>{
-        const d=document.createElement('div');
-        d.className='ac-item';
-        d.innerHTML=`<span>${r.nama}</span><span class="text-slate-500">${r.nip_nik}</span>`;
-        d.onclick=()=>{
-          nama.value=r.nama;
-          nip.value=r.nip_nik;
+      box.innerHTML = '';
+      data.forEach(r => {
+        const d = document.createElement('div');
+        d.className = 'ac-item';
+        d.innerHTML = `<span>${r.nama}</span><span class="text-slate-500">${r.nip_nik}</span>`;
+        d.onclick = () => {
+          nama.value = r.nama;
+          nip.value  = r.nip_nik;
           box.classList.add('hidden');
         };
         box.appendChild(d);
       });
       box.classList.remove('hidden');
-    }, 250);
+    }, 300);
   });
 
-  document.addEventListener('click', e=>{
-    if(!box.contains(e.target) && e.target!==nama) box.classList.add('hidden');
+  document.addEventListener('click', e => {
+    if (!box.contains(e.target) && e.target !== nama) box.classList.add('hidden');
   });
-}
-
-/* ========= HELPERS ========= */
-async function resizeSignature(){
-  const img=new Image(); img.src=pad.toDataURL('image/png'); await img.decode();
-  const c=document.createElement('canvas'); c.width=163; c.height=64;
-  const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,163,64);
-  const s=Math.min(163/img.width,64/img.height);
-  const w=img.width*s,h=img.height*s;
-  ctx.drawImage(img,(163-w)/2,(64-h)/2,w,h);
-  return await (await fetch(c.toDataURL('image/png'))).blob();
-}
-async function upload(bucket,file,name){
-  const {data,error}=await supabase.storage.from(bucket).upload(name,file);
-  if(error) throw error; return data.path;
 }
 
 /* ========= SUBMIT ========= */
 async function submitForm(){
   if(pad.isEmpty()){ alert('TTD wajib'); return; }
-  if(!pdf1.files[0]||!pdf2.files[0]){ alert('Wajib 2 PDF'); return; }
+  if(!pdf1.files[0] || !pdf2.files[0]){ alert('Wajib 2 PDF'); return; }
 
-  try{
-    const ttd=await resizeSignature();
-    const ttdPath=await upload(BUCKET_TTD, ttd, 'ttd_'+Date.now()+'.png');
-    const p1=await upload(BUCKET_PDF, pdf1.files[0], Date.now()+'_1.pdf');
-    const p2=await upload(BUCKET_PDF, pdf2.files[0], Date.now()+'_2.pdf');
+  const { error } = await supabase.from('pengajuan_cuti').insert({
+    nama: nama.value,
+    nip: nip.value,
+    no_hp: hp.value,
+    jenis_cuti: jenis.value,
+    tgl_mulai: tgl.value,
+    lama_cuti: lama.value,
+    alamat: alamat.value
+  });
 
-    const {error}=await supabase.from('pengajuan_cuti').insert({
-      nama:nama.value,
-      nip:nip.value,
-      no_hp:hp.value,
-      jenis_cuti:jenis.value,
-      tgl_mulai:tgl.value,
-      lama_cuti:lama.value,
-      alamat:alamat.value,
-      file_1_url:p1,
-      file_2_url:p2,
-      signature_url:ttdPath
-    });
-    if(error) throw error;
+  if(error){ alert(error.message); return; }
 
-    step3.classList.add('hidden'); done.classList.remove('hidden');
-  }catch(e){ alert('Gagal: '+e.message); }
+  step3.classList.add('hidden');
+  done.classList.remove('hidden');
 }
 </script>
 </body>
