@@ -241,57 +241,68 @@ function clearPad(){ pad.clear(); }
 
 /* SUBMIT */
 async function submitForm(){
-  if(pad.isEmpty()) return alert('Tanda tangan wajib');
+  try{
+    if(pad.isEmpty()) return alert('Tanda tangan wajib');
 
-  const file1 = document.querySelectorAll('input[type=file]')[0].files[0];
-  const file2 = document.querySelectorAll('input[type=file]')[1].files[0];
+    const files = document.querySelectorAll('input[type=file]');
+    const file1 = files[0].files[0];
+    const file2 = files[1].files[0];
+    if(!file1 || !file2) return alert('Dua file PDF wajib diupload');
 
-  if(!file1 || !file2) return alert('Dua file PDF wajib diupload');
+    const uid = crypto.randomUUID();
 
-  const uid = crypto.randomUUID();
+    /* === UPLOAD PDF 1 === */
+    const { data:pdf1, error:e1 } = await sb.storage
+      .from('cuti-pdf')
+      .upload(`pdf/${uid}_1.pdf`, file1, { upsert:false });
 
-  /* ===== UPLOAD FILE PDF ===== */
-  const { data:pdf1 } = await sb.storage
-    .from('cuti')
-    .upload(`pdf/${uid}_1.pdf`, file1);
+    if(e1) throw e1;
 
-  const { data:pdf2 } = await sb.storage
-    .from('cuti')
-    .upload(`pdf/${uid}_2.pdf`, file2);
+    /* === UPLOAD PDF 2 === */
+    const { data:pdf2, error:e2 } = await sb.storage
+      .from('cuti-pdf')
+      .upload(`pdf/${uid}_2.pdf`, file2, { upsert:false });
 
-  const file1_url = sb.storage.from('cuti').getPublicUrl(pdf1.path).data.publicUrl;
-  const file2_url = sb.storage.from('cuti').getPublicUrl(pdf2.path).data.publicUrl;
+    if(e2) throw e2;
 
-  /* ===== UPLOAD SIGNATURE ===== */
-  const blob = await (await fetch(pad.toDataURL())).blob();
+    const file_1_url = sb.storage.from('cuti-pdf').getPublicUrl(pdf1.path).data.publicUrl;
+    const file_2_url = sb.storage.from('cuti-pdf').getPublicUrl(pdf2.path).data.publicUrl;
 
-  const { data:sig } = await sb.storage
-    .from('cuti')
-    .upload(`ttd/${uid}.png`, blob, { contentType:'image/png' });
+    /* === SIGNATURE === */
+    const blob = await (await fetch(pad.toDataURL('image/png'))).blob();
 
-  const signature_url = sb.storage.from('cuti').getPublicUrl(sig.path).data.publicUrl;
+    const { data:sig, error:e3 } = await sb.storage
+      .from('cuti-signature')
+      .upload(`ttd/${uid}.png`, blob, { contentType:'image/png' });
 
-  /* ===== INSERT DATABASE ===== */
-  const { error } = await sb.from('pengajuan_cuti').insert({
-    nama: nama.value,
-    nip: nip.value,
-    no_hp: hp.value,
-    jenis_cuti: jenis.value,
-    tgl_mulai: tgl.value,
-    lama_cuti: lama.value,
-    alamat: alamat.value,
-    file_1_url,
-    file_2_url,
-    signature_url,
-    status: 'DIAJUKAN'
-  });
+    if(e3) throw e3;
 
-  if(error){
-    alert('Gagal menyimpan: '+error.message);
-    return;
+    const signature_url =
+      sb.storage.from('cuti-signature').getPublicUrl(sig.path).data.publicUrl;
+
+    /* === INSERT DATABASE === */
+    const { error:dbErr } = await sb.from('pengajuan_cuti').insert({
+      nama: nama.value,
+      nip: nip.value,
+      no_hp: hp.value,
+      jenis_cuti: jenis.value,
+      tgl_mulai: tgl.value,
+      lama_cuti: lama.value,
+      alamat: alamat.value,
+      file_1_url,
+      file_2_url,
+      signature_url,
+      status: 'DIAJUKAN'
+    });
+
+    if(dbErr) throw dbErr;
+
+    document.getElementById('done').classList.remove('hidden');
+
+  }catch(err){
+    console.error(err);
+    alert('ERROR: ' + err.message);
   }
-
-  document.getElementById('done').classList.remove('hidden');
 }
 
 </script>
