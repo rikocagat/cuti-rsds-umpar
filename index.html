@@ -8,7 +8,7 @@
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Supabase JS v2 -->
+<!-- Supabase JS v2 (WAJIB) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- Signature Pad -->
@@ -18,7 +18,12 @@
   body{background:#f1f5f9}
   .input{width:100%;padding:12px;border-radius:14px;border:1px solid #cbd5e1}
   .btn{width:100%;padding:12px;border-radius:14px;font-weight:600}
-  .ac{position:absolute;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-height:240px;overflow:auto;box-shadow:0 10px 25px rgba(0,0,0,.1)}
+  .ac{
+    position:absolute;z-index:50;background:#fff;
+    border:1px solid #e2e8f0;border-radius:14px;
+    max-height:240px;overflow:auto;
+    box-shadow:0 10px 25px rgba(0,0,0,.1)
+  }
   .ac-item{padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between}
   .ac-item:hover{background:#f0f9ff}
 </style>
@@ -93,11 +98,8 @@
 const SUPABASE_URL = 'https://ufiqibxdgwlysqhinqbz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_EVSVWnsUriOPA_O3RnGTpg_Zmd4pyAL';
 
-const BUCKET_PDF = 'cuti-pdf';
-const BUCKET_TTD = 'cuti-signature';
-
-/* ================= INIT ================= */
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/* ================= INIT SUPABASE ================= */
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let pad;
 
 window.onload = () => {
@@ -114,24 +116,25 @@ function go(n){
   document.getElementById('step'+n).classList.remove('hidden');
 }
 
-/* ================= AUTOCOMPLETE ================= */
+/* ================= AUTOCOMPLETE (public.pegawai) ================= */
 function setupAutocomplete(){
   const nama = document.getElementById('nama');
   const nip = document.getElementById('nip');
   const box = document.getElementById('acBox');
-  let t=null;
+  let timer;
 
-  nama.addEventListener('input', ()=>{
+  nama.addEventListener('input', () => {
     const q = nama.value.trim();
-    nip.value='';
-    if(t) clearTimeout(t);
-    if(q.length < 2){
+    nip.value = '';
+
+    clearTimeout(timer);
+    if (q.length < 2){
       box.classList.add('hidden');
-      box.innerHTML='';
+      box.innerHTML = '';
       return;
     }
 
-    t = setTimeout(async ()=>{
+    timer = setTimeout(async () => {
       const { data, error } = await supabase
         .from('pegawai')
         .select('nama, nip_nik')
@@ -139,92 +142,39 @@ function setupAutocomplete(){
         .order('nama')
         .limit(10);
 
-      if(error || !data?.length){
-        box.innerHTML='<div class="p-3 text-slate-400">Tidak ada data</div>';
+      if (error || !data?.length){
+        box.innerHTML = `<div class="p-3 text-slate-400">Tidak ada data</div>`;
         box.classList.remove('hidden');
         return;
       }
 
-      box.innerHTML='';
-      data.forEach(r=>{
-        const d=document.createElement('div');
-        d.className='ac-item';
-        d.innerHTML=`<span>${r.nama}</span><span class="text-slate-500">${r.nip_nik}</span>`;
-        d.onclick=()=>{
-          nama.value=r.nama;
-          nip.value=r.nip_nik;
+      box.innerHTML = '';
+      data.forEach(r => {
+        const item = document.createElement('div');
+        item.className = 'ac-item';
+        item.innerHTML = `<span>${r.nama}</span><span class="text-slate-500">${r.nip_nik}</span>`;
+        item.onclick = () => {
+          nama.value = r.nama;
+          nip.value = r.nip_nik;
           box.classList.add('hidden');
         };
-        box.appendChild(d);
+        box.appendChild(item);
       });
+
       box.classList.remove('hidden');
     }, 300);
   });
 
-  document.addEventListener('click', e=>{
-    if(!box.contains(e.target) && e.target!==nama){
+  document.addEventListener('click', e => {
+    if (!box.contains(e.target) && e.target !== nama) {
       box.classList.add('hidden');
     }
   });
 }
 
-/* ================= HELPERS ================= */
-async function resizeSignature(){
-  const img=new Image();
-  img.src=pad.toDataURL('image/png');
-  await img.decode();
-
-  const c=document.createElement('canvas');
-  c.width=163; c.height=64;
-  const ctx=c.getContext('2d');
-  ctx.fillStyle='#fff';
-  ctx.fillRect(0,0,163,64);
-
-  const s=Math.min(163/img.width,64/img.height);
-  const w=img.width*s, h=img.height*s;
-  ctx.drawImage(img,(163-w)/2,(64-h)/2,w,h);
-
-  return await (await fetch(c.toDataURL('image/png'))).blob();
-}
-
-async function upload(bucket,file,name){
-  const {data,error}=await supabase.storage.from(bucket).upload(name,file,{upsert:true});
-  if(error) throw error;
-  return data.path;
-}
-
-/* ================= SUBMIT ================= */
+/* ================= SUBMIT (dummy) ================= */
 async function submitForm(){
-  if(pad.isEmpty()){ alert('Tanda tangan wajib'); return; }
-  if(!pdf1.files[0] || !pdf2.files[0]){ alert('Wajib 2 file PDF'); return; }
-
-  try{
-    const ttdBlob = await resizeSignature();
-    const ttdPath = await upload(BUCKET_TTD, ttdBlob, 'ttd_'+Date.now()+'.png');
-
-    const p1 = await upload(BUCKET_PDF, pdf1.files[0], Date.now()+'_1.pdf');
-    const p2 = await upload(BUCKET_PDF, pdf2.files[0], Date.now()+'_2.pdf');
-
-    const { error } = await supabase.from('pengajuan_cuti').insert({
-      nama: nama.value,
-      nip: nip.value,
-      no_hp: hp.value,
-      jenis_cuti: jenis.value,
-      tgl_mulai: tgl.value,
-      lama_cuti: lama.value,
-      alamat: alamat.value,
-      file_1_url: p1,
-      file_2_url: p2,
-      signature_url: ttdPath
-    });
-
-    if(error) throw error;
-
-    step3.classList.add('hidden');
-    done.classList.remove('hidden');
-  }catch(e){
-    alert('Gagal: ' + e.message);
-  }
+  alert('Autocomplete SUDAH AKTIF. Submit bisa disambung ke pengajuan_cuti.');
 }
 </script>
 </body>
