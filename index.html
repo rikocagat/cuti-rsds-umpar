@@ -183,38 +183,61 @@ function clearPad(){pad.clear()}
 async function submitForm(){
 try{
 if(pad.isEmpty()) return alert('Tanda tangan wajib');
+
 const f1=document.getElementById('pdf1').files[0];
 const f2=document.getElementById('pdf2').files[0];
 if(!f1||!f2) return alert('Dua file PDF wajib');
-if(f1.size>102400||f2.size>102400) return alert('Ukuran PDF maksimal 100 KB');
+
+if(f1.size>512000||f2.size>512000)
+  return alert('Ukuran PDF maksimal 500 KB');
+
 const uid=crypto.randomUUID();
 
-const up1=await sb.storage.from('cuti-pdf').upload(`pdf/${uid}_1.pdf`,f1);
-const up2=await sb.storage.from('cuti-pdf').upload(`pdf/${uid}_2.pdf`,f2);
-const sigBlob=await(await fetch(pad.toDataURL())).blob();
-const upSig=await sb.storage.from('cuti-signature').upload(`ttd/${uid}.png`,sigBlob);
+const toBase64 = f => new Promise((res,rej)=>{
+  const r=new FileReader();
+  r.onload=()=>res(r.result.split(',')[1]);
+  r.onerror=rej;
+  r.readAsDataURL(f);
+});
+
+const payload = {
+  uid,
+  nama: nama.value,
+  nip: nip.value,
+  pdf1: { data: await toBase64(f1) },
+  pdf2: { data: await toBase64(f2) },
+  signature: await toBase64(
+    await (await fetch(pad.toDataURL())).blob()
+  )
+};
+
+const gasRes = await fetch('PASTE_URL_WEB_APP_GAS_DI_SINI', {
+  method:'POST',
+  body: JSON.stringify(payload)
+});
+const gasData = await gasRes.json();
+if(gasData.error) throw new Error(gasData.error);
 
 await sb.from('pengajuan_cuti').insert({
-nama:nama.value,
-nip:nip.value,
-jabatan:jabatan.value,
-no_hp:hp.value,
-jenis_cuti:jenis.value,
-tgl_mulai:tgl.value,
-lama_cuti:lama.value,
-alamat:alamat.value,
-file_1_url:sb.storage.from('cuti-pdf').getPublicUrl(up1.data.path).data.publicUrl,
-file_2_url:sb.storage.from('cuti-pdf').getPublicUrl(up2.data.path).data.publicUrl,
-signature_url:sb.storage.from('cuti-signature').getPublicUrl(upSig.data.path).data.publicUrl,
-status:'DIAJUKAN'
+  nama:nama.value,
+  nip:nip.value,
+  jabatan:jabatan.value,
+  no_hp:hp.value,
+  jenis_cuti:jenis.value,
+  tgl_mulai:tgl.value,
+  lama_cuti:lama.value,
+  alamat:alamat.value,
+  file_1_url:gasData.file1_url,
+  file_2_url:gasData.file2_url,
+  signature_url:gasData.signature_url,
+  status:'DIAJUKAN'
 });
 
 document.querySelectorAll('input,textarea,select').forEach(e=>e.value='');
-acBox.innerHTML=''; acBox.classList.add('hidden');
-reqBox.classList.add('hidden');
 pad.clear();
 document.getElementById('ttdSection').classList.add('hidden');
 document.getElementById('done').classList.remove('hidden');
+
 }catch(e){
 alert('ERROR: '+e.message);
 }}
