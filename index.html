@@ -81,7 +81,7 @@ canvas{touch-action:none}
 <div class="divider"></div>
 
 <div>
-<label class="font-semibold text-sm">Upload 2 File PDF <span class="text-xs text-slate-500">(maks 100 KB / file)</span></label>
+<label class="font-semibold text-sm">Upload 2 File PDF <span class="text-xs text-slate-500">(maks 500 KB / file)</span></label>
 <input id="pdf1" type="file" accept="application/pdf" class="mt-2">
 <input id="pdf2" type="file" accept="application/pdf" class="mt-2">
 </div>
@@ -211,7 +211,7 @@ const payload = {
   )
 };
 
-const gasRes = await fetch('PASTE_URL_WEB_APP_GAS_DI_SINI', {
+const gasRes = await fetch('https://script.google.com/macros/s/AKfycbwimU9p4NUpuu5Uc8KeC40peWYBZh08IKtkr3e-eqJwIWeMyJ711I3u-7YxAT4-toWK/exec', {
   method:'POST',
   body: JSON.stringify(payload)
 });
