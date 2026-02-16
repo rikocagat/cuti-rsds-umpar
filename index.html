@@ -205,91 +205,87 @@ if(!pad) pad=new SignaturePad(document.getElementById('pad'),{backgroundColor:'#
 }
 function clearPad(){pad.clear()}
 
-<script>
 async function submitForm(){
 try{
-  // TAMPILKAN LOADING
-  document.getElementById('loading').classList.remove('hidden');
+document.getElementById('loading').classList.remove('hidden');
 
-  if(pad.isEmpty()){
-    document.getElementById('loading').classList.add('hidden');
-    return alert('Tanda tangan wajib');
-  }
+if(pad.isEmpty()){
+document.getElementById('loading').classList.add('hidden');
+return alert('Tanda tangan wajib');
+}
 
-  const f1=document.getElementById('pdf1').files[0];
-  const f2=document.getElementById('pdf2').files[0];
-  if(!f1||!f2){
-    document.getElementById('loading').classList.add('hidden');
-    return alert('Dua file PDF wajib');
-  }
+const f1=document.getElementById('pdf1').files[0];
+const f2=document.getElementById('pdf2').files[0];
+if(!f1||!f2){
+document.getElementById('loading').classList.add('hidden');
+return alert('Dua file PDF wajib');
+}
 
-  if(f1.size>512000||f2.size>512000){
-    document.getElementById('loading').classList.add('hidden');
-    return alert('Ukuran PDF maksimal 500 KB');
-  }
+if(f1.size>512000||f2.size>512000){
+document.getElementById('loading').classList.add('hidden');
+return alert('Ukuran PDF maksimal 500 KB');
+}
 
-  const uid=crypto.randomUUID();
+const uid=crypto.randomUUID();
 
-  const toBase64 = f => new Promise((res,rej)=>{
-    const r=new FileReader();
-    r.onload=()=>res(r.result.split(',')[1]);
-    r.onerror=rej;
-    r.readAsDataURL(f);
-  });
+const toBase64 = f => new Promise((res,rej)=>{
+const r=new FileReader();
+r.onload=()=>res(r.result.split(',')[1]);
+r.onerror=rej;
+r.readAsDataURL(f);
+});
 
-  const payload = {
-    uid,
-    nama: nama.value,
-    nip: nip.value,
-    pdf1: { data: await toBase64(f1) },
-    pdf2: { data: await toBase64(f2) },
-    signature: await toBase64(
-      await (await fetch(pad.toDataURL())).blob()
-    )
-  };
+const payload = {
+uid,
+nama: nama.value,
+nip: nip.value,
+pdf1: { data: await toBase64(f1) },
+pdf2: { data: await toBase64(f2) },
+signature: await toBase64(
+await (await fetch(pad.toDataURL())).blob()
+)
+};
 
-  const gasRes = await fetch('https://script.google.com/macros/s/AKfycbwimU9p4NUpuu5Uc8KeC40peWYBZh08IKtkr3e-eqJwIWeMyJ711I3u-7YxAT4-toWK/exec', {
-    method:'POST',
-    body: JSON.stringify(payload)
-  });
-  const gasData = await gasRes.json();
-  if(gasData.error) throw new Error(gasData.error);
+const gasRes = await fetch('https://script.google.com/macros/s/AKfycbwimU9p4NUpuu5Uc8KeC40peWYBZh08IKtkr3e-eqJwIWeMyJ711I3u-7YxAT4-toWK/exec',{
+method:'POST',
+body: JSON.stringify(payload)
+});
+const gasData = await gasRes.json();
+if(gasData.error) throw new Error(gasData.error);
 
-  await sb.from('pengajuan_cuti').insert({
-    nama:nama.value,
-    nip:nip.value,
-    jabatan:jabatan.value,
-    no_hp:hp.value,
-    jenis_cuti:jenis.value,
-    tgl_mulai:tgl.value,
-    lama_cuti:lama.value,
-    alamat:alamat.value,
-    file_1_url:gasData.file1_url,
-    file_2_url:gasData.file2_url,
-    signature_url:gasData.signature_url,
-    status:'DIAJUKAN'
-  });
+await sb.from('pengajuan_cuti').insert({
+nama:nama.value,
+nip:nip.value,
+jabatan:jabatan.value,
+no_hp:hp.value,
+jenis_cuti:jenis.value,
+tgl_mulai:tgl.value,
+lama_cuti:lama.value,
+alamat:alamat.value,
+file_1_url:gasData.file1_url,
+file_2_url:gasData.file2_url,
+signature_url:gasData.signature_url,
+status:'DIAJUKAN'
+});
 
-  // RESET FORM (ASLI)
-  document.querySelectorAll('input,textarea,select').forEach(e=>e.value='');
-  pad.clear();
-  document.getElementById('ttdSection').classList.add('hidden');
-  document.getElementById('done').classList.remove('hidden');
+document.querySelectorAll('input,textarea,select').forEach(e=>e.value='');
+pad.clear();
+document.getElementById('ttdSection').classList.add('hidden');
+document.getElementById('done').classList.remove('hidden');
 
-  // TAMPILAN AKHIR
-  document.getElementById('loading').classList.add('hidden');
-  document.querySelector('main').classList.add('hidden');
-  document.getElementById('afterDone').classList.remove('hidden');
+document.getElementById('loading').classList.add('hidden');
+document.querySelector('main').classList.add('hidden');
+document.getElementById('afterDone').classList.remove('hidden');
 
 }catch(e){
-  document.getElementById('loading').classList.add('hidden');
-  alert('ERROR: '+e.message);
+document.getElementById('loading').classList.add('hidden');
+alert('ERROR: '+e.message);
 }}
 
 function resetForm(){
-  document.getElementById('afterDone').classList.add('hidden');
-  document.getElementById('done').classList.add('hidden');
-  document.querySelector('main').classList.remove('hidden');
+document.getElementById('afterDone').classList.add('hidden');
+document.getElementById('done').classList.add('hidden');
+document.querySelector('main').classList.remove('hidden');
 }
 </script>
 </body>
