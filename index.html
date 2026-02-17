@@ -164,30 +164,38 @@ nama.addEventListener('input', ()=>{
   const q = nama.value.trim().toLowerCase();
   if(q.length < 2){ acBox.classList.add('hidden'); return; }
 
-  // fungsi fuzzy (subsequence)
-  function fuzzyMatch(text, pattern){
-    text = text.toLowerCase();
-    let ti = 0, pi = 0;
-    while(ti < text.length && pi < pattern.length){
-      if(text[ti] === pattern[pi]) pi++;
-      ti++;
-    }
-    return pi === pattern.length;
+  // normalisasi: buang tanda baca & gelar umum
+  function normalize(str){
+    return str
+      .toLowerCase()
+      .replace(/[.,]/g,'')
+      .replace(/\b(dr|drg|sp|spd|spog|sp\.ort|ort)\b/g,'')
+      .trim();
+  }
+
+  // token-based match (mirip Google Sheets)
+  function matchName(fullName, query){
+    const nameTokens  = normalize(fullName).split(/\s+/);
+    const queryTokens = normalize(query).split(/\s+/);
+
+    // setiap token query harus cocok dengan salah satu token nama
+    return queryTokens.every(qt =>
+      nameTokens.some(nt => nt.startsWith(qt))
+    );
   }
 
   timer = setTimeout(async ()=>{
-    // ambil data tanpa prefix (lebih fleksibel)
     const { data, error } = await sb
       .from('pegawai')
       .select('nama,nip_nik,jabatan')
-      .limit(50);
+      .limit(100);
 
     acBox.innerHTML = '';
     if(error || !data?.length){
       acBox.innerHTML = '<div class="p-4 text-slate-400">Tidak ada data</div>';
     }else{
       data
-        .filter(r => r.nama && fuzzyMatch(r.nama, q))
+        .filter(r => r.nama && matchName(r.nama, q))
         .slice(0, 7)
         .forEach(r=>{
           const d = document.createElement('div');
