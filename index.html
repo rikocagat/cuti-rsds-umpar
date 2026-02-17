@@ -158,37 +158,53 @@ const jabatan=document.getElementById('jabatan');
 const acBox=document.getElementById('acBox');
 let timer;
 
-nama.addEventListener('input',()=>{
-clearTimeout(timer);
-nip.value=''; jabatan.value='';
-const q=nama.value.trim();
-if(q.length<2){acBox.classList.add('hidden');return}
-timer=setTimeout(async()=>{
-const {data,error}=await sb.from('pegawai')
-.select('nama,nip_nik,jabatan')
-.ilike('nama',q+'%')
-.limit(10);
-acBox.innerHTML='';
-if(error||!data?.length){
-acBox.innerHTML='<div class="p-4 text-slate-400">Tidak ada data</div>';
-}else{
-data.forEach(r=>{
-const d=document.createElement('div');
-d.className='ac-item';
-d.innerHTML=`<span>${r.nama}</span><span>${r.nip_nik}</span>`;
-d.onclick=()=>{
-nama.value=r.nama;
-nip.value=r.nip_nik;
-jabatan.value=r.jabatan;
-acBox.classList.add('hidden');
-};
-acBox.appendChild(d);
-});
-}
-acBox.classList.remove('hidden');
-},300);
-});
+nama.addEventListener('input', ()=>{
+  clearTimeout(timer);
+  nip.value=''; jabatan.value='';
+  const q = nama.value.trim().toLowerCase();
+  if(q.length < 2){ acBox.classList.add('hidden'); return; }
 
+  // fungsi fuzzy (subsequence)
+  function fuzzyMatch(text, pattern){
+    text = text.toLowerCase();
+    let ti = 0, pi = 0;
+    while(ti < text.length && pi < pattern.length){
+      if(text[ti] === pattern[pi]) pi++;
+      ti++;
+    }
+    return pi === pattern.length;
+  }
+
+  timer = setTimeout(async ()=>{
+    // ambil data tanpa prefix (lebih fleksibel)
+    const { data, error } = await sb
+      .from('pegawai')
+      .select('nama,nip_nik,jabatan')
+      .limit(50);
+
+    acBox.innerHTML = '';
+    if(error || !data?.length){
+      acBox.innerHTML = '<div class="p-4 text-slate-400">Tidak ada data</div>';
+    }else{
+      data
+        .filter(r => r.nama && fuzzyMatch(r.nama, q))
+        .slice(0, 7)
+        .forEach(r=>{
+          const d = document.createElement('div');
+          d.className = 'ac-item';
+          d.innerHTML = `<span>${r.nama}</span><span>${r.nip_nik}</span>`;
+          d.onclick = ()=>{
+            nama.value = r.nama;
+            nip.value = r.nip_nik;
+            jabatan.value = r.jabatan;
+            acBox.classList.add('hidden');
+          };
+          acBox.appendChild(d);
+        });
+    }
+    acBox.classList.remove('hidden');
+  }, 300);
+});
 const jenis=document.getElementById('jenis');
 const reqBox=document.getElementById('reqBox');
 jenis.addEventListener('change',()=>{
