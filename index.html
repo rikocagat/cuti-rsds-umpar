@@ -175,15 +175,16 @@ nama.addEventListener('input', ()=>{
 
   // token-based match (mirip Google Sheets)
 function matchName(fullName, query){
-  const nameTokens  = normalize(fullName).split(/\s+/);
-  const queryTokens = normalize(query).split(/\s+/);
+  const nameTokens  = normalize(fullName).split(/\s+/).filter(Boolean);
+  const queryTokens = normalize(query).split(/\s+/).filter(Boolean);
 
-  // setiap token query harus ada di salah satu token nama (lebih longgar)
+  // kalau setelah normalisasi query kosong, JANGAN FILTER
+  if(queryTokens.length === 0) return true;
+
   return queryTokens.every(qt =>
     nameTokens.some(nt => nt.includes(qt))
   );
 }
-
   timer = setTimeout(async ()=>{
     const { data, error } = await sb
       .from('pegawai')
