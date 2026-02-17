@@ -186,11 +186,14 @@ function matchName(fullName, query){
   );
 }
   timer = setTimeout(async ()=>{
-    const { data, error } = await sb
-      .from('pegawai')
-      .select('nama,nip_nik,jabatan')
-      .limit(100);
+    const key = q.split(' ')[0];
 
+const { data, error } = await sb
+  .from('pegawai')
+  .select('nama,nip_nik,jabatan')
+  .ilike('nama', `%${key}%`)
+  .order('nama')
+  .limit(50);
     acBox.innerHTML = '';
     if(error || !data?.length){
       acBox.innerHTML = '<div class="p-4 text-slate-400">Tidak ada data</div>';
